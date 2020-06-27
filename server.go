@@ -68,12 +68,54 @@ func createSchool(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(school)
 }
 
+func deleteSchool(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint hit: deleteSchool")
+	w.Header().Set("Content-Type", "application-json")
+
+	params := mux.Vars(r)
+
+	for i, school := range Schools {
+		if school.ID == params["id"] {
+			Schools = append(Schools[:i], Schools[i+1:]...)
+			json.NewEncoder(w).Encode(school)
+			return
+		}
+	}
+
+	fmt.Println("Failed to delete school")
+}
+
+func updateSchool(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint hit: updateSchool")
+	w.Header().Set("Content-Type", "application-json")
+
+	params := mux.Vars(r)
+
+	for i, school := range Schools {
+		if school.ID == params["id"] {
+			Schools = append(Schools[:i], Schools[i+1:]...)
+
+			var newSchool School
+			_ = json.NewDecoder(r.Body).Decode(&newSchool)
+
+			newSchool.ID = params["id"]
+			Schools = append(Schools, newSchool)
+			json.NewEncoder(w).Encode(newSchool)
+			return
+		}
+	}
+
+	fmt.Println("Failed to updateSchool")
+}
+
 func handleRequest() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", homepage)
 	r.HandleFunc("/schools", getSchools).Methods("GET")
 	r.HandleFunc("/schools/{id}", getSchool).Methods("GET")
 	r.HandleFunc("/schools", createSchool).Methods("POST")
+	r.HandleFunc("/schools/{id}", deleteSchool).Methods("DELETE")
+	r.HandleFunc("/schools/{id}", updateSchool).Methods("PUT")
 
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
@@ -83,7 +125,7 @@ func handleRequest() {
 
 func main() {
 
-	// Initialize a few schools to get started
+	// Initialize a few schools to get started with get requests 
 	Schools = []School {
 		School{ID: "1", Name: "University of Waterloo", Location: "Waterloo, Ontario"},
 		School{ID: "2", Name: "Harvard University", Location: "Cambridge, Massachusetts"},
@@ -91,4 +133,3 @@ func main() {
 
 	handleRequest()
 }
-
